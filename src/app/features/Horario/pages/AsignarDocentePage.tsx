@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { asignacionDocenteService } from "../services/asignacionDocenteService";
-import axios from "axios";
+// Importa tu instancia 'api' global
+import { api } from "../../../../lib/axios";
 import Header from "../../../components/common/Header";
 import Footer from "../../../components/common/Footer";
 
@@ -12,14 +13,12 @@ interface OpcionSelect {
 export default function AsignarDocentePage() {
   const [docentes, setDocentes] = useState<OpcionSelect[]>([]);
   const [materiaGrupos, setMateriaGrupos] = useState<OpcionSelect[]>([]);
-  const [form, setForm] = useState({ cod_docente: "", id_materia_grupo: "", hrs_asignadas: "" });
+  const [form, setForm] = useState({ id_docente: "", id_materia_grupo: "", hrs_asignadas: "" });
   const [mensaje, setMensaje] = useState<{ tipo: "exito" | "error" | null; texto: string }>({
     tipo: null,
     texto: "",
   });
   const [loading, setLoading] = useState(false);
-
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
     cargarSelects();
@@ -27,28 +26,40 @@ export default function AsignarDocentePage() {
 
   const cargarSelects = async () => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
+      // El interceptor 'api.js' maneja los headers automáticamente
 
-      // Cargar docentes activos
-      const docentesRes = await axios.get(`${import.meta.env.VITE_API_URL}/docentes/select`, { headers });
-      setDocentes(
-        docentesRes.data.data.map((d: any) => ({
-          value: d.cod_docente,
-          label: `${d.perfil?.nombre_completo ?? d.nombres} (${d.cod_docente})`,
-        }))
-      );
+      // Cargar docentes activos (usando la instancia 'api')
+      const docentesRes = await api.get('/docentes/consulta?activo=true');
 
-      // Cargar materia-grupos activos
-      const materiaGruposRes = await axios.get(`${import.meta.env.VITE_API_URL}/grupos/select`, { headers });
-      setMateriaGrupos(
-        materiaGruposRes.data.data.map((mg: any) => ({
-          value: mg.id_materia_grupo ?? mg.id_grupo,
-          label: `${mg.nombre_materia ?? mg.materia?.nombre} - ${mg.nombre ?? mg.grupo?.nombre}`,
-        }))
-      );
-    } catch (error) {
+      const docentesMapeados = docentesRes.data.data.map((d: any) => ({
+        value: d.cod_docente,
+        label: d.nombre_completo || `Docente ${d.cod_docente}`
+      }));
+
+      setDocentes(docentesMapeados);
+
+      const materiaGruposRes = await api.get('/materia-grupos/select');
+      
+      // Verificar si hay datos
+      if (!materiaGruposRes.data.data || materiaGruposRes.data.data.length === 0) {
+        console.warn("⚠️ No hay materia-grupos disponibles sin docente asignado");
+        setMateriaGrupos([]);
+      } else {
+        // Mapear la respuesta a formato {value, label}
+        const materiaGruposMapeados = materiaGruposRes.data.data.map((mg: any) => ({
+          value: mg.value,
+          label: mg.label
+        }));
+        
+        setMateriaGrupos(materiaGruposMapeados);
+      }
+      
+    } catch (error: any) {
       console.error("Error cargando selects:", error);
-      setMensaje({ tipo: "error", texto: "Error al cargar datos de docentes o materias" });
+      setMensaje({ 
+        tipo: "error", 
+        texto: error.response?.data?.message || "Error al cargar datos de docentes o materias" 
+      });
     }
   };
 
@@ -63,7 +74,7 @@ export default function AsignarDocentePage() {
 
     try {
       const data = {
-        cod_docente: Number(form.cod_docente),
+        id_docente: Number(form.id_docente),
         id_materia_grupo: Number(form.id_materia_grupo),
         hrs_asignadas: Number(form.hrs_asignadas),
       };
@@ -72,7 +83,10 @@ export default function AsignarDocentePage() {
 
       if (response.success) {
         setMensaje({ tipo: "exito", texto: response.message });
-        setForm({ cod_docente: "", id_materia_grupo: "", hrs_asignadas: "" });
+        setForm({ id_docente: "", id_materia_grupo: "", hrs_asignadas: "" });
+        
+        // Recargar los materia-grupos
+        cargarSelects(); 
       } else {
         throw new Error(response.message || "Error al asignar docente.");
       }
@@ -115,8 +129,8 @@ export default function AsignarDocentePage() {
             <div>
               <label className="block text-sm font-semibold text-[#003366] mb-1">Docente</label>
               <select
-                name="cod_docente"
-                value={form.cod_docente}
+                name="id_docente"
+                value={form.id_docente}
                 onChange={handleChange}
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#003366]"
@@ -131,7 +145,7 @@ export default function AsignarDocentePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#003366] mb-1">Materia-Grupo</label>
+              <label className="block text-sm font-semibold text-[#003366] mb-1">Materia-Grupo (Solo disponibles)</label>
               <select
                 name="id_materia_grupo"
                 value={form.id_materia_grupo}
@@ -149,7 +163,7 @@ export default function AsignarDocentePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#003366] mb-1">Horas Asignadas</label>
+              <label className="block text-sm font-semibold text-[#003366] mb-1">Horas Asignadas (Semanales)</label>
               <input
                 type="number"
                 name="hrs_asignadas"

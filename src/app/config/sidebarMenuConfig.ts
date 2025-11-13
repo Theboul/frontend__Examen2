@@ -25,6 +25,7 @@ export const sidebarMenu = {
     { label: "Materias", href: "/materias", icon: MenuBookIcon }, // CU3: Gestionar Materias
     { label: "Docentes", href: "/docentes", icon: PersonIcon }, // CU2: Gestionar Docentes
     { label: "Grupos", href: "/grupos", icon: GroupIcon }, // CU4: Gestionar Grupos
+    { label: "Materia-Grupos", href: "/materia-grupos", icon: MenuBookIcon }, // Gestionar Materia-Grupos
     { label: "Aulas", href: "/aulas", icon: MeetingRoomIcon }, // CU5: Gestionar Aulas
     { label: "Usuarios / Carga Masiva", href: "/carga-masiva-usuarios", icon: AssignmentIcon }, // CU1: Cargar Usuarios Masivamente
     { label: "Bitácora", href: "/bitacora", icon: HistoryIcon }, // CU21: Gestionar Bitácora
@@ -39,6 +40,7 @@ export const sidebarMenu = {
     { label: "Docentes", href: "/docentes", icon: PersonIcon }, // CU2: Gestionar Docentes
     { label: "Materias", href: "/materias", icon: MenuBookIcon }, // CU3: Gestionar Materias
     { label: "Grupos", href: "/grupos", icon: GroupIcon }, // CU4: Gestionar Grupos
+    { label: "Materia-Grupos", href: "/materia-grupos", icon: MenuBookIcon }, // Gestionar Materia-Grupos
     { label: "Aulas", href: "/aulas", icon: MeetingRoomIcon }, // CU5: Gestionar Aulas
     { label: "Asignar Docente", href: "/asignar-docente", icon: PersonIcon }, // CU16: Asignar Docente a Materia-Grupo
     { label: "Horarios Manuales", href: "/asignar-horario-manual", icon: AccessTimeIcon }, // CU6: Asignar Horarios Manualmente

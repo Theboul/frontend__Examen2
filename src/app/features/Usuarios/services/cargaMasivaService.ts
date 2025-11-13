@@ -1,4 +1,4 @@
-import axios from "../../../../lib/axios"; // tu instancia base de Axios
+import axios from "../../../../lib/axios";
 
 export interface ResultadoCarga {
   total_procesados: number;

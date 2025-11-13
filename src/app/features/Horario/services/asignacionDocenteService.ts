@@ -1,28 +1,31 @@
-import axios from "axios";
 
-const API_URL = `${import.meta.env.VITE_API_URL}/asignaciones-docente`;
+import { api } from "../../../../lib/axios";
+
+const API_URL = '/asignaciones-docente';
 
 export const asignacionDocenteService = {
-  // 🔹 Listar todas las asignaciones
+  /**
+   * Listar todas las asignaciones
+   * Llama a GET /api/asignaciones-docente
+   */
   async listar() {
-    const token = localStorage.getItem("token");
-    const response = await axios.get(API_URL, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await api.get(API_URL);
     return response.data;
   },
 
-  // 🔹 Alias opcional (compatibilidad con otros módulos)
+  /**
+   * Alias opcional (compatibilidad con otros módulos)
+   */
   async getAll() {
     return await this.listar();
   },
 
-  // 🔹 Crear nueva asignación docente
-  async crearAsignacion(data: { cod_docente: number; id_materia_grupo: number; hrs_asignadas: number }) {
-    const token = localStorage.getItem("token");
-    const response = await axios.post(API_URL, data, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  /**
+   * Crear nueva asignación docente
+   * Llama a POST /api/asignaciones-docente
+   */
+  async crearAsignacion(data: { id_docente: number; id_materia_grupo: number; hrs_asignadas: number }) {
+    const response = await api.post(API_URL, data);
     return response.data;
   },
 };

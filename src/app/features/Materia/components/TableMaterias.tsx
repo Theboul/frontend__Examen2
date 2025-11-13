@@ -12,10 +12,19 @@ export default function TableMaterias({ refresh }: { refresh: boolean }) {
   const [materiaAEditar, setMateriaAEditar] = useState<Materia | null>(null);
 
   const cargarMaterias = async () => {
-    // Listar con inactivas para tener una vista completa
-    const res = await MateriaService.listar(true);
-    if (res.success) setMaterias(res.data);
-    else alert("Error al cargar materias: " + res.message);
+      try {
+
+          const res = await MateriaService.listar(true);
+          
+          if (res.success) {
+              setMaterias(res.data);
+              console.log('✅ Materias cargadas:', res.data.length);
+          } else {
+              alert("Error al cargar materias: " + res.message);
+          }
+      } catch (error) {
+          alert("Error fatal al cargar materias");
+      }
   };
 
   useEffect(() => {
@@ -78,7 +87,7 @@ export default function TableMaterias({ refresh }: { refresh: boolean }) {
         Materias Registradas
       </h2>
 
-      {/* 🌐 Tabla única, adaptable y con header sticky */}
+      {/* Tabla única, adaptable y con header sticky */}
       <div
         ref={tableRef}
         className={`w-full overflow-x-auto rounded-lg border relative transition-shadow duration-300 ${scrolled ? "shadow-[inset_10px_0_8px_-8px_rgba(0,0,0,0.15)]" : ""
@@ -112,7 +121,7 @@ export default function TableMaterias({ refresh }: { refresh: boolean }) {
                   <td className="py-2 px-2 font-medium">{materia.id_materia}</td>
                   <td className="text-left px-3">{materia.nombre}</td>
                   <td>{materia.sigla || 'N/A'}</td>
-                  <td>{materia.carrera.codigo}</td> {/* Muestra el código de la carrera */}
+                  <td>{materia.carrera.codigo}</td>
                   <td>{materia.semestre.nombre}</td>
                   <td>{materia.creditos || 0}</td>
                   <td>

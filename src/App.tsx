@@ -26,6 +26,7 @@ import CargaHorariaDocentePage from "./app/features/Horario/pages/CargaHorariaDo
 import RegistrarYJustificarAsistencia from "./app/features/Asistencia/pages/RegistrarYJustificarAsistencia";
 import MiHorarioDocenteDemo from "./app/features/Docente/pages/miHorario";
 import GenerarReportesAsistenciaPage from "./app/features/Reportes/pages/GenerarReportesAsistenciaPage";
+import GestionarMateriaGrupos from "./app/features/MateriaGrupo/pages/GestionarMateriaGrupos";
 
 
 function App() {
@@ -59,6 +60,7 @@ function App() {
         <Route path="/docente/asistencia" element={<RegistrarYJustificarAsistencia />} />
         <Route path="/docente/mi-horario" element={<MiHorarioDocenteDemo />} />
         <Route path="/reportes/asistencia" element={<GenerarReportesAsistenciaPage />} />
+        <Route path="/materia-grupos" element={<GestionarMateriaGrupos />} />
       </Routes>
     </Router>
   );

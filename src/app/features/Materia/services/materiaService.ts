@@ -16,22 +16,21 @@ export interface Materia {
     id_carrera: number;
     nombre: string;
     sigla: string | null;
-    creditos: string | number | null; 
-    carga_horaria_semestral: string | number | null;
+    creditos: number | null;
+    carga_horaria_semestral: number | null;
     activo: boolean;
-    // Relaciones cargadas por el Controller
     carrera: { id_carrera: number; nombre: string; codigo: string };
     semestre: Semestre;
 }
 
 export interface MateriaForm {
-    id_semestre: string | number; 
-    id_carrera: string | number; 
+    id_semestre: number;
+    id_carrera: number;
     nombre: string;
     sigla: string;
-    creditos: string | number | null; 
-    carga_horaria_semestral: string | number | null;
-    activo?: boolean; // Solo necesario en Update
+    creditos: number | null;
+    carga_horaria_semestral: number | null; 
+    activo?: boolean;
 }
 
 // Interfaz para la respuesta de Select
@@ -50,13 +49,32 @@ export const MateriaService = {
      * GET /materias
      * Listar todas las materias
      */
-    listar: async (incluirInactivas = false): Promise<{ success: boolean; data: Materia[]; message?: string }> => {
+    listar: async (incluirInactivas = false) => {
         try {
             const params = incluirInactivas ? { incluir_inactivas: true } : {};
             const response = await api.get(`/materias`, { params });
-            return { ...response.data, message: 'Materias obtenidas exitosamente' };
+            
+            // Verifica la estructura real del backend
+            if (response.data.success) {
+                return { 
+                    success: true, 
+                    data: response.data.data || response.data.materias || [],
+                    message: response.data.message 
+                };
+            } else {
+                return { 
+                    success: false, 
+                    data: [], 
+                    message: response.data.message || 'Error en la respuesta del servidor'
+                };
+            }
         } catch (error: any) {
-            return { success: false, data: [], message: error.response?.data?.message || 'Error al obtener materias' };
+            console.error('Error en MateriaService.listar:', error);
+            return { 
+                success: false, 
+                data: [], 
+                message: error.response?.data?.message || 'Error de conexión al servidor' 
+            };
         }
     },
 

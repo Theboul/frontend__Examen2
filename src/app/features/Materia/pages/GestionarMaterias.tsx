@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-// 💡 CORRECCIÓN DE RUTAS/NOMBRES DE COMPONENTES
 import FormMaterias from "../../Materia/components/FormMaterias";
 import TableMaterias from "../../Materia/components/TableMaterias";
 import Header from "../../../components/common/Header";
