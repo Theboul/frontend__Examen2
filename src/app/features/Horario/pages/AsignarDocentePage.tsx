@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { asignacionDocenteService } from "../services/asignacionDocenteService";
-// Importa tu instancia 'api' global
 import { api } from "../../../../lib/axios";
 import Header from "../../../components/common/Header";
 import Footer from "../../../components/common/Footer";
@@ -13,11 +12,17 @@ interface OpcionSelect {
 export default function AsignarDocentePage() {
   const [docentes, setDocentes] = useState<OpcionSelect[]>([]);
   const [materiaGrupos, setMateriaGrupos] = useState<OpcionSelect[]>([]);
-  const [form, setForm] = useState({ id_docente: "", id_materia_grupo: "", hrs_asignadas: "" });
-  const [mensaje, setMensaje] = useState<{ tipo: "exito" | "error" | null; texto: string }>({
-    tipo: null,
-    texto: "",
+  const [form, setForm] = useState({
+    cod_docente: "",
+    id_materia_grupo: "",
+    hrs_asignadas: "",
   });
+
+  const [mensaje, setMensaje] = useState<{
+    tipo: "exito" | "error" | null;
+    texto: string;
+  }>({ tipo: null, texto: "" });
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -26,44 +31,33 @@ export default function AsignarDocentePage() {
 
   const cargarSelects = async () => {
     try {
-      // El interceptor 'api.js' maneja los headers automáticamente
-
-      // Cargar docentes activos (usando la instancia 'api')
-      const docentesRes = await api.get('/docentes/consulta?activo=true');
-
+      // DOCENTES
+      const docentesRes = await api.get("/docentes/select");
       const docentesMapeados = docentesRes.data.data.map((d: any) => ({
         value: d.cod_docente,
-        label: d.nombre_completo || `Docente ${d.cod_docente}`
+        label: d.nombre_completo,
       }));
-
       setDocentes(docentesMapeados);
 
-      const materiaGruposRes = await api.get('/materia-grupos/select');
-      
-      // Verificar si hay datos
-      if (!materiaGruposRes.data.data || materiaGruposRes.data.data.length === 0) {
-        console.warn("⚠️ No hay materia-grupos disponibles sin docente asignado");
-        setMateriaGrupos([]);
-      } else {
-        // Mapear la respuesta a formato {value, label}
-        const materiaGruposMapeados = materiaGruposRes.data.data.map((mg: any) => ({
-          value: mg.value,
-          label: mg.label
-        }));
-        
-        setMateriaGrupos(materiaGruposMapeados);
-      }
-      
+      // MATERIA-GRUPOS
+      const mgRes = await api.get("/materia-grupos/select");
+      const mgMapeados = mgRes.data.data.map((mg: any) => ({
+        value: mg.value,
+        label: mg.label,
+      }));
+      setMateriaGrupos(mgMapeados);
+
     } catch (error: any) {
-      console.error("Error cargando selects:", error);
-      setMensaje({ 
-        tipo: "error", 
-        texto: error.response?.data?.message || "Error al cargar datos de docentes o materias" 
+      setMensaje({
+        tipo: "error",
+        texto: error.response?.data?.message || "Error al cargar selects.",
       });
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>
+  ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -74,7 +68,7 @@ export default function AsignarDocentePage() {
 
     try {
       const data = {
-        id_docente: Number(form.id_docente),
+        id_docente: Number(form.cod_docente),
         id_materia_grupo: Number(form.id_materia_grupo),
         hrs_asignadas: Number(form.hrs_asignadas),
       };
@@ -83,17 +77,26 @@ export default function AsignarDocentePage() {
 
       if (response.success) {
         setMensaje({ tipo: "exito", texto: response.message });
-        setForm({ id_docente: "", id_materia_grupo: "", hrs_asignadas: "" });
-        
-        // Recargar los materia-grupos
-        cargarSelects(); 
+
+        // limpiar form
+        setForm({
+          cod_docente: "",
+          id_materia_grupo: "",
+          hrs_asignadas: "",
+        });
+
+        cargarSelects();
       } else {
-        throw new Error(response.message || "Error al asignar docente.");
+        throw new Error(response.message);
       }
+
     } catch (error: any) {
       setMensaje({
         tipo: "error",
-        texto: error.response?.data?.message || error.message || "No se pudo completar la asignación.",
+        texto:
+          error.response?.data?.message ||
+          error.message ||
+          "No se pudo completar la asignación.",
       });
     } finally {
       setLoading(false);
@@ -105,13 +108,10 @@ export default function AsignarDocentePage() {
       <Header />
 
       <main className="grow container mx-auto px-4 py-10">
-        <div className="bg-white max-w-2xl mx-auto rounded-2xl shadow-lg border border-gray-200 p-8">
+        <div className="bg-white max-w-2xl mx-auto rounded-2xl shadow-lg border p-8">
           <h1 className="text-2xl font-bold text-[#003366] mb-3 text-center">
             Asignar Docente a Materia-Grupo
           </h1>
-          <p className="text-gray-600 text-sm text-center mb-6">
-            Seleccione un docente y un materia-grupo para crear la asignación correspondiente.
-          </p>
 
           {mensaje.tipo && (
             <div
@@ -126,14 +126,16 @@ export default function AsignarDocentePage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+
+            {/* DOCENTE */}
             <div>
-              <label className="block text-sm font-semibold text-[#003366] mb-1">Docente</label>
+              <label className="block text-sm font-semibold mb-1">Docente</label>
               <select
-                name="id_docente"
-                value={form.id_docente}
+                name="cod_docente"
+                value={form.cod_docente}
                 onChange={handleChange}
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#003366]"
+                className="w-full border px-3 py-2 rounded-lg"
               >
                 <option value="">Seleccione un docente</option>
                 {docentes.map((doc) => (
@@ -144,14 +146,17 @@ export default function AsignarDocentePage() {
               </select>
             </div>
 
+            {/* MATERIA-GRUPO */}
             <div>
-              <label className="block text-sm font-semibold text-[#003366] mb-1">Materia-Grupo (Solo disponibles)</label>
+              <label className="block text-sm font-semibold mb-1">
+                Materia-Grupo
+              </label>
               <select
                 name="id_materia_grupo"
                 value={form.id_materia_grupo}
                 onChange={handleChange}
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#003366]"
+                className="w-full border px-3 py-2 rounded-lg"
               >
                 <option value="">Seleccione una materia-grupo</option>
                 {materiaGrupos.map((mg) => (
@@ -162,8 +167,11 @@ export default function AsignarDocentePage() {
               </select>
             </div>
 
+            {/* HORAS */}
             <div>
-              <label className="block text-sm font-semibold text-[#003366] mb-1">Horas Asignadas (Semanales)</label>
+              <label className="block text-sm font-semibold mb-1">
+                Horas asignadas
+              </label>
               <input
                 type="number"
                 name="hrs_asignadas"
@@ -172,14 +180,14 @@ export default function AsignarDocentePage() {
                 value={form.hrs_asignadas}
                 onChange={handleChange}
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#003366]"
+                className="w-full border px-3 py-2 rounded-lg"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#880000] text-white font-semibold py-2 rounded-lg hover:bg-[#b30000] transition-colors duration-200 disabled:opacity-50"
+              className="w-full bg-[#880000] text-white py-2 rounded-lg"
             >
               {loading ? "Asignando..." : "Asignar Docente"}
             </button>

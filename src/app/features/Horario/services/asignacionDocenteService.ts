@@ -1,31 +1,23 @@
-
 import { api } from "../../../../lib/axios";
 
-const API_URL = '/asignaciones-docente';
+const API_URL = "/asignaciones-docente";
 
 export const asignacionDocenteService = {
-  /**
-   * Listar todas las asignaciones
-   * Llama a GET /api/asignaciones-docente
-   */
-  async listar() {
-    const response = await api.get(API_URL);
-    return response.data;
+  getAll: async () => {
+    try {
+      const res = await api.get(API_URL);
+      return res.data; // success, data
+    } catch (error) {
+      throw error;
+    }
   },
 
-  /**
-   * Alias opcional (compatibilidad con otros módulos)
-   */
-  async getAll() {
-    return await this.listar();
-  },
-
-  /**
-   * Crear nueva asignación docente
-   * Llama a POST /api/asignaciones-docente
-   */
-  async crearAsignacion(data: { id_docente: number; id_materia_grupo: number; hrs_asignadas: number }) {
-    const response = await api.post(API_URL, data);
-    return response.data;
+  crearAsignacion: async (data: any) => {
+    try {
+      const res = await api.post(API_URL, data);
+      return res.data; // success, message, data
+    } catch (error: any) {
+      throw error;
+    }
   },
 };

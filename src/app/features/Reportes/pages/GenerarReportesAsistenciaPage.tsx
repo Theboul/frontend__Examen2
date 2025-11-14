@@ -1,10 +1,10 @@
-"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileSpreadsheet, FileText, Filter } from "lucide-react";
 import { reporteAsistenciaService } from "../services/reporteAsistenciaService";
 import Header from "../../../components/common/Header";
 import Footer from "../../../components/common/Footer";
+import { api } from "../../../../lib/axios";
 
 export default function GenerarReportesAsistenciaPage() {
   const [filtros, setFiltros] = useState({
@@ -18,6 +18,32 @@ export default function GenerarReportesAsistenciaPage() {
   const [loading, setLoading] = useState(false);
   const [reporte, setReporte] = useState<any>(null);
 
+  // Datos de selects
+  const [docentes, setDocentes] = useState<any[]>([]);
+  const [materias, setMaterias] = useState<any[]>([]);
+  const [grupos, setGrupos] = useState<any[]>([]);
+
+  // Cargar datos iniciales
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        const [dRes, mRes, gRes] = await Promise.all([
+          api.get("/docentes/select"),
+          api.get("/materias/select"),
+          api.get("/grupos/select"),
+        ]);
+
+        setDocentes(dRes.data.data || dRes.data);
+        setMaterias(mRes.data.data || mRes.data);
+        setGrupos(gRes.data.data || gRes.data);
+      } catch (err) {
+        console.error("Error cargando selects:", err);
+      }
+    };
+
+    cargarDatos();
+  }, []);
+
   const generarReporte = async () => {
     setLoading(true);
     try {
@@ -29,6 +55,7 @@ export default function GenerarReportesAsistenciaPage() {
         fecha_inicio: filtros.fechaInicio || undefined,
         fecha_fin: filtros.fechaFin || undefined,
       });
+
       setReporte(data);
     } catch (err) {
       console.error("Error:", err);
@@ -44,42 +71,63 @@ export default function GenerarReportesAsistenciaPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* HEADER */}
       <Header />
 
-      {/* CONTENIDO PRINCIPAL */}
       <main className="flex-grow py-10 px-6">
         <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8">
           <h1 className="text-3xl font-bold text-[#880000] mb-6 flex items-center gap-2">
             <Filter className="text-[#880000]" /> Reporte de Asistencia Docente
           </h1>
 
-          {/* 🔍 Filtros */}
+          {/* Filtros */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <input
-              type="text"
+
+            {/* DOCENTE */}
+            <select
               name="docente"
-              placeholder="ID Docente"
               value={filtros.docente}
               onChange={handleChange}
               className="border rounded-lg px-4 py-2"
-            />
-            <input
-              type="text"
+            >
+              <option value="">Seleccionar Docente...</option>
+              {docentes.map((d) => (
+                <option key={d.id_docente} value={d.id_docente}>
+                  {d.nombre_completo}
+                </option>
+              ))}
+            </select>
+
+            {/* MATERIA */}
+            <select
               name="materia"
-              placeholder="ID Materia"
               value={filtros.materia}
               onChange={handleChange}
               className="border rounded-lg px-4 py-2"
-            />
-            <input
-              type="text"
+            >
+              <option value="">Seleccionar Materia...</option>
+              {materias.map((m) => (
+                <option key={m.id_materia} value={m.id_materia}>
+                  {m.nombre}
+                </option>
+              ))}
+            </select>
+
+            {/* GRUPO */}
+            <select
               name="grupo"
-              placeholder="ID Grupo"
               value={filtros.grupo}
               onChange={handleChange}
               className="border rounded-lg px-4 py-2"
-            />
+            >
+              <option value="">Seleccionar Grupo...</option>
+              {grupos.map((g) => (
+                <option key={g.id_grupo} value={g.id_grupo}>
+                  {g.nombre}
+                </option>
+              ))}
+            </select>
+
+            {/* FECHAS */}
             <input
               type="date"
               name="fechaInicio"
@@ -87,6 +135,7 @@ export default function GenerarReportesAsistenciaPage() {
               onChange={handleChange}
               className="border rounded-lg px-4 py-2"
             />
+
             <input
               type="date"
               name="fechaFin"
@@ -94,6 +143,7 @@ export default function GenerarReportesAsistenciaPage() {
               onChange={handleChange}
               className="border rounded-lg px-4 py-2"
             />
+
           </div>
 
           {/* Botones */}
@@ -125,6 +175,7 @@ export default function GenerarReportesAsistenciaPage() {
           {reporte && reporte.success && (
             <>
               <h2 className="text-xl font-semibold text-gray-800 mb-4">📊 Estadísticas Generales</h2>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-6">
                 {Object.entries(reporte.estadisticas).map(([key, value]) => (
                   <div key={key} className="bg-gray-100 rounded-xl p-4 text-center shadow-sm">
@@ -154,18 +205,10 @@ export default function GenerarReportesAsistenciaPage() {
                     {reporte.data_detallada.map((r: any, index: number) => (
                       <tr key={index} className="border-t hover:bg-gray-100 transition-colors">
                         <td className="px-3 py-2">{r.fecha_registro}</td>
-                        <td className="px-3 py-2">
-                          {r.asignacion_docente?.docente?.perfil?.nombre_completo || "-"}
-                        </td>
-                        <td className="px-3 py-2">
-                          {r.asignacion_docente?.materia_grupo?.materia?.nombre || "-"}
-                        </td>
-                        <td className="px-3 py-2">
-                          {r.asignacion_docente?.materia_grupo?.grupo?.nombre || "-"}
-                        </td>
-                        <td className="px-3 py-2 text-center font-semibold text-[#880000]">
-                          {r.estado?.nombre || "-"}
-                        </td>
+                        <td className="px-3 py-2">{r.asignacion_docente?.docente?.perfil?.nombre_completo || "-"}</td>
+                        <td className="px-3 py-2">{r.asignacion_docente?.materia_grupo?.materia?.nombre || "-"}</td>
+                        <td className="px-3 py-2">{r.asignacion_docente?.materia_grupo?.grupo?.nombre || "-"}</td>
+                        <td className="px-3 py-2 text-center font-semibold text-[#880000]">{r.estado?.nombre || "-"}</td>
                         <td className="px-3 py-2 text-center">{r.tipo_registro || "-"}</td>
                       </tr>
                     ))}
@@ -183,7 +226,6 @@ export default function GenerarReportesAsistenciaPage() {
         </div>
       </main>
 
-      {/* FOOTER SIEMPRE ABAJO */}
       <Footer />
     </div>
   );

@@ -1,138 +1,125 @@
-import { useEffect, useState, useRef } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { GrupoService, type Grupo } from "../../Grupo/services/grupoService";
 import Modal from "../../../components/common/Modal";
 import FormGrupo from "../components/FormGrupos";
-
+import { motion } from "framer-motion";
 
 export default function TableGrupos({ refresh }: { refresh: boolean }) {
-  const [grupos, setGrupos] = useState<Grupo[]>([]);
-  const [scrolled, setScrolled] = useState(false);
-  const tableRef = useRef<HTMLDivElement>(null);
 
-  const [grupoAEditar, setGrupoAEditar] = useState<Grupo | null>(null); // Usado
+  const [grupos, setGrupos] = useState<Grupo[]>([]);
+  const [grupoAEditar, setGrupoAEditar] = useState<Grupo | null>(null);
 
   const cargarGrupos = async () => {
-    const res = await GrupoService.listar({ incluir_inactivos: true });
+    const res = await GrupoService.listar({});
     if (res.success) setGrupos(res.data);
-    else console.error("Error al cargar grupos:", res.message);
+    else console.error("Error grupos:", res.message);
   };
 
   useEffect(() => {
     cargarGrupos();
   }, [refresh]);
 
-  // Función usada
-  const finalizarAccion = () => {
+  const finalizar = () => {
     setGrupoAEditar(null);
     cargarGrupos();
   };
 
-  // Función usada
-  const iniciarEdicion = (grupo: Grupo) => {
-    setGrupoAEditar(grupo);
-  };
-
-  // Función usada (id y nombre se usan en confirm/service call)
-  const reactivar = async (id: number, nombre: string) => {
-    if (confirm(`¿Deseas reactivar el grupo "${nombre}"?`)) {
-      const res = await GrupoService.reactivar(id);
-      alert(res.message);
-      finalizarAccion();
-    }
-  };
-
-  // Función usada
-  const desactivar = async (id: number, nombre: string) => {
-    if (confirm(`¿Deseas DESACTIVAR el grupo "${nombre}"?`)) {
-      const res = await GrupoService.eliminar(id);
-      alert(res.message);
-      finalizarAccion();
-    }
-  };
-
-  // Función usada (setScrolled se usa aquí)
-  const handleScroll = () => {
-    if (!tableRef.current) return;
-    setScrolled(tableRef.current.scrollLeft > 0);
-  };
-
-  useEffect(() => {
-    const el = tableRef.current;
-    el?.addEventListener("scroll", handleScroll);
-    // handleScroll se usa aquí en el cleanup
-    return () => el?.removeEventListener("scroll", handleScroll);
-  }, []);
-
-
   return (
-    <motion.div
-      className="bg-white shadow-md rounded-xl p-4 mt-6 w-full"
-      initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} viewport={{ once: true }}>
+    <motion.div className="bg-white shadow-lg rounded-xl p-4 mt-8">
+      <h2 className="text-xl font-bold text-[#2A3964] mb-4">Grupos Registrados</h2>
 
-      <h2 className="font-semibold mb-4 text-center sm:text-left text-lg sm:text-xl" style={{ color: "#2A3964" }}>Grupos Registrados</h2>
-
-      <div ref={tableRef} className={`w-full overflow-x-auto rounded-lg border relative transition-shadow duration-300 ${scrolled ? "shadow-[inset_10px_0_8px_-8px_rgba(0,0,0,0.15)]" : ""}`}>
-        <table className="min-w-full text-sm text-center border-collapse">
-          <thead className="sticky top-0 z-10" style={{ backgroundColor: "#2A3964", color: "#ffffff" }}>
+      <div className="overflow-x-auto border rounded">
+        <table className="min-w-full text-sm">
+          <thead className="bg-[#2A3964] text-white">
             <tr>
-              <th className="py-2 px-3 whitespace-nowrap">ID Grupo</th>
-              <th className="whitespace-nowrap">Materia (Sigla)</th>
-              <th className="whitespace-nowrap">Nombre</th>
-              <th className="whitespace-nowrap">Descripción</th>
-              <th className="whitespace-nowrap">Capacidad</th>
-              <th className="whitespace-nowrap">Cupos</th>
-              <th className="whitespace-nowrap">Estado</th>
-              <th className="whitespace-nowrap">Acciones</th>
+              <th className="py-2">ID</th>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Capacidad</th>
+              <th>Cupos</th>
+              <th>Estado</th>
+              <th>Acciones</th>
             </tr>
           </thead>
 
           <tbody>
             {grupos.length > 0 ? (
-              grupos.map((grupo) => (
-                <motion.tr key={grupo.id_grupo} className="border-b hover:bg-gray-100 text-gray-700 transition-all" whileHover={{ scale: 1.01 }}>
-                  <td className="py-2 px-2 font-medium">{grupo.id_grupo}</td>
-                  <td className="font-medium">{grupo.materia.sigla}</td>
+              grupos.map(grupo => (
+                <tr key={grupo.id_grupo} className="border-b">
+                  <td className="py-2">{grupo.id_grupo}</td>
                   <td>{grupo.nombre}</td>
-                  <td>{grupo.descripcion || 'N/A'}</td>
+                  <td>{grupo.descripcion || "N/A"}</td>
                   <td>{grupo.capacidad_maxima}</td>
                   <td>{grupo.cupos}</td>
+
                   <td>
-                    <span className={`px-2 py-1 rounded-full text-white text-xs font-medium ${grupo.activo ? "bg-green-600" : "bg-red-500"}`}>
+                    <span className={
+                      `px-2 py-1 rounded text-white ${
+                        grupo.activo ? "bg-green-600" : "bg-red-500"
+                      }`
+                    }>
                       {grupo.activo ? "Activo" : "Inactivo"}
                     </span>
                   </td>
-                  <td className="flex flex-col sm:flex-row justify-center items-center gap-2 py-2">
-                    <button onClick={() => iniciarEdicion(grupo)}
-                      className="bg-orange-500 text-white text-xs sm:text-sm px-3 py-1 rounded-lg hover:opacity-90 transition-all w-full sm:w-auto min-w-[70px]">
+
+                  <td className="flex gap-2 justify-center">
+
+                    <button
+                      className="px-3 py-1 bg-orange-500 text-white rounded"
+                      onClick={() => setGrupoAEditar(grupo)}
+                    >
                       Editar
                     </button>
+
                     {grupo.activo ? (
-                      <button onClick={() => desactivar(grupo.id_grupo, grupo.nombre)}
-                        className="bg-[#880000] text-white text-xs sm:text-sm px-3 py-1 rounded-lg hover:opacity-90 transition-all w-full sm:w-auto min-w-[70px]">
+                      <button
+                        className="px-3 py-1 bg-red-600 text-white rounded"
+                        onClick={async () => {
+                          if (confirm("¿Desactivar grupo?")) {
+                            const r = await GrupoService.eliminar(grupo.id_grupo);
+                            alert(r.message);
+                            cargarGrupos();
+                          }
+                        }}
+                      >
                         Desactivar
                       </button>
                     ) : (
-                      <button onClick={() => reactivar(grupo.id_grupo, grupo.nombre)}
-                        className="bg-[#2A3964] text-white text-xs sm:text-sm px-3 py-1 rounded-lg hover:opacity-90 transition-all w-full sm:w-auto min-w-[70px]">
+                      <button
+                        className="px-3 py-1 bg-blue-700 text-white rounded"
+                        onClick={async () => {
+                          if (confirm("¿Reactivar grupo?")) {
+                            const r = await GrupoService.reactivar(grupo.id_grupo);
+                            alert(r.message);
+                            cargarGrupos();
+                          }
+                        }}
+                      >
                         Reactivar
                       </button>
                     )}
+
                   </td>
-                </motion.tr>
+                </tr>
               ))
-            ) : (<tr><td colSpan={9} className="py-3 text-gray-500">No hay grupos registrados</td></tr>)}
+            ) : (
+              <tr>
+                <td colSpan={7} className="py-4 text-center text-gray-500">
+                  No hay grupos registrados
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-      {/* MODAL DE EDICIÓN */}
+
       {grupoAEditar && (
         <Modal
-          open={!!grupoAEditar}
+          open={true}
           onClose={() => setGrupoAEditar(null)}
           title={`Editar Grupo: ${grupoAEditar.nombre}`}
         >
-          <FormGrupo grupo={grupoAEditar} onSuccess={finalizarAccion} />
+          <FormGrupo grupo={grupoAEditar} onSuccess={finalizar} />
         </Modal>
       )}
     </motion.div>

@@ -4,54 +4,65 @@ import Footer from "../../../components/common/Footer";
 import axios from "axios";
 import { disponibilidadAulasService } from "../services/disponibilidadAulasService";
 
+type MensajeEstado = {
+  tipo: "error" | "exito" | null;
+  texto: string;
+};
+
 export default function ConsultarDisponibilidadAulasPage() {
   const [dias, setDias] = useState<any[]>([]);
   const [bloques, setBloques] = useState<any[]>([]);
   const [aulas, setAulas] = useState<any[]>([]);
   const [resumen, setResumen] = useState<any>(null);
-  const [formData, setFormData] = useState({ id_dia: "", id_bloque_horario: "" });
-  const [mensaje, setMensaje] = useState<{ tipo: "error" | "exito" | null; texto: string }>({
+  const [formData, setFormData] = useState({
+    id_dia: "",
+    id_bloque_horario: "",
+  });
+  const [mensaje, setMensaje] = useState<MensajeEstado>({
     tipo: null,
     texto: "",
   });
   const [loading, setLoading] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL;
-  const token = localStorage.getItem("token");
+  const API_URL = import.meta.env.VITE_API_URL as string;
+  const token = localStorage.getItem("auth_token");
 
   // 🔹 Cargar días y bloques al inicio
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const headers = { Authorization: `Bearer ${token}` };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!token) {
+          setMensaje({
+            tipo: "error",
+            texto: "No se encontró token. Inicie sesión nuevamente.",
+          });
+          return;
+        }
 
-      const [diasRes, bloquesRes] = await Promise.all([
-        axios.get(`${API_URL}/dias/select`, { headers }),
-        axios.get(`${API_URL}/bloques-horario/select`, { headers }),
-      ]);
+        const headers = { Authorization: `Bearer ${token}` };
 
-      // 🔹 Validamos que sean arrays antes de asignar
-      const diasData =
-        Array.isArray(diasRes.data?.data) ? diasRes.data.data :
-        Array.isArray(diasRes.data) ? diasRes.data : [];
+        const [diasRes, bloquesRes] = await Promise.all([
+          axios.get(`${API_URL}/dias/select`, { headers }),
+          axios.get(`${API_URL}/bloques-horario/select`, { headers }),
+        ]);
 
-      const bloquesData =
-        Array.isArray(bloquesRes.data?.data) ? bloquesRes.data.data :
-        Array.isArray(bloquesRes.data) ? bloquesRes.data : [];
+        // El backend devuelve { success, data: [ { value, label } ] }
+        const diasData = diasRes.data?.data ?? [];
+        const bloquesData = bloquesRes.data?.data ?? [];
 
-      setDias(diasData);
-      setBloques(bloquesData);
-    } catch (error) {
-      console.error("Error al cargar días o bloques:", error);
-      setMensaje({
-        tipo: "error",
-        texto: "Error al cargar días o bloques.",
-      });
-    }
-  };
+        setDias(diasData);
+        setBloques(bloquesData);
+      } catch (error) {
+        console.error("Error al cargar días o bloques:", error);
+        setMensaje({
+          tipo: "error",
+          texto: "Error al cargar días o bloques.",
+        });
+      }
+    };
 
-  fetchData();
-}, []);
+    fetchData();
+  }, [API_URL, token]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -60,13 +71,27 @@ useEffect(() => {
   // 🔹 Consultar disponibilidad
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!formData.id_dia || !formData.id_bloque_horario) {
-      setMensaje({ tipo: "error", texto: "Debe seleccionar un día y un bloque horario." });
+      setMensaje({
+        tipo: "error",
+        texto: "Debe seleccionar un día y un bloque horario.",
+      });
+      return;
+    }
+
+    if (!token) {
+      setMensaje({
+        tipo: "error",
+        texto: "No se encontró token. Inicie sesión nuevamente.",
+      });
       return;
     }
 
     setLoading(true);
     setMensaje({ tipo: null, texto: "" });
+    setAulas([]);
+    setResumen(null);
 
     try {
       const res = await disponibilidadAulasService.consultarDisponibilidad(
@@ -74,17 +99,25 @@ useEffect(() => {
         Number(formData.id_bloque_horario)
       );
 
-      if (res.success) {
-        setAulas(res.data);
-        setResumen(res.resumen);
-        setMensaje({ tipo: "exito", texto: "Consulta realizada correctamente ✅" });
+      if (res?.success) {
+        setAulas(res.data ?? []);
+        setResumen(res.resumen ?? null);
+        setMensaje({
+          tipo: "exito",
+          texto: res.message || "Consulta realizada correctamente ✅",
+        });
       } else {
-        setMensaje({ tipo: "error", texto: res.message || "No se pudo obtener la disponibilidad." });
+        setMensaje({
+          tipo: "error",
+          texto: res?.message || "No se pudo obtener la disponibilidad.",
+        });
       }
     } catch (err: any) {
+      console.error(err);
       setMensaje({
         tipo: "error",
-        texto: err.response?.data?.message || "Error al consultar disponibilidad.",
+        texto:
+          err?.response?.data?.message || "Error al consultar disponibilidad.",
       });
     } finally {
       setLoading(false);
@@ -96,7 +129,7 @@ useEffect(() => {
       <Header />
       <main className="grow container mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold text-center text-[#003366] mb-6">
-           Consultar Disponibilidad de Aulas
+          Consultar Disponibilidad de Aulas
         </h1>
 
         {mensaje.tipo && (
@@ -117,8 +150,11 @@ useEffect(() => {
           className="bg-white shadow-md rounded-xl p-6 max-w-2xl mx-auto space-y-4 border"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Día */}
             <div>
-              <label className="block text-sm font-semibold text-[#003366] mb-1">Día</label>
+              <label className="block text-sm font-semibold text-[#003366] mb-1">
+                Día
+              </label>
               <select
                 name="id_dia"
                 value={formData.id_dia}
@@ -127,13 +163,14 @@ useEffect(() => {
               >
                 <option value="">Seleccione...</option>
                 {dias.map((d) => (
-                  <option key={d.id_dia} value={d.id_dia}>
-                    {d.nombre}
+                  <option key={d.value} value={d.value}>
+                    {d.label}
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* Bloque horario */}
             <div>
               <label className="block text-sm font-semibold text-[#003366] mb-1">
                 Bloque Horario
@@ -146,8 +183,8 @@ useEffect(() => {
               >
                 <option value="">Seleccione...</option>
                 {bloques.map((b) => (
-                  <option key={b.id_bloque_horario} value={b.id_bloque_horario}>
-                    {b.nombre} ({b.hr_inicio} - {b.hr_fin})
+                  <option key={b.value} value={b.value}>
+                    {b.label}
                   </option>
                 ))}
               </select>
@@ -157,7 +194,7 @@ useEffect(() => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#880000] text-white font-semibold py-2 rounded-lg hover:bg-[#b30000] transition-colors duration-200"
+            className="w-full bg-[#880000] text-white font-semibold py-2 rounded-lg hover:bg-[#b30000] transition-colors duration-200 disabled:opacity-70"
           >
             {loading ? "Consultando..." : "Consultar Disponibilidad"}
           </button>
@@ -178,7 +215,8 @@ useEffect(() => {
                 <div className="w-4 h-4 rounded-full bg-[#ffe6e6]" /> Ocupada
               </span>
               <span className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-gray-300" /> No disponible
+                <div className="w-4 h-4 rounded-full bg-gray-300" /> No
+                disponible
               </span>
             </div>
 
