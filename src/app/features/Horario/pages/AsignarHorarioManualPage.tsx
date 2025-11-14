@@ -3,7 +3,7 @@ import Header from "../../../components/common/Header";
 import Footer from "../../../components/common/Footer";
 import { horarioService } from "../services/HorarioService";
 import { asignacionDocenteService } from "../services/asignacionDocenteService";
-import axios from "axios";
+import axios from "../../../../lib/axios";
 
 export default function AsignarHorarioManualPage() {
   const [formData, setFormData] = useState({
@@ -38,14 +38,14 @@ export default function AsignarHorarioManualPage() {
         respBloques,
         respTiposClase,
       ] = await Promise.all([
-        asignacionDocenteService.getAll(),
-        axios.get(`${import.meta.env.VITE_API_URL}/aulas/select`),
+        asignacionDocenteService.getSelect(), 
+        axios.get("/aulas/select"),
         horarioService.getDias(),
         horarioService.getBloques(),
         horarioService.getTiposClase(),
       ]);
 
-      setAsignaciones(respAsignaciones.data.data || []);
+      setAsignaciones(respAsignaciones || []);
       setAulas(respAulas.data.data || []);
       setDias(respDias.data.data || []);
       setBloques(respBloques.data.data || []);
@@ -66,7 +66,6 @@ export default function AsignarHorarioManualPage() {
     setMensaje({ tipo: null, texto: "" });
 
     try {
-      //const token = localStorage.getItem("token");
       const response = await horarioService.create(formData);
 
       if (response.data.success) {
@@ -131,12 +130,17 @@ export default function AsignarHorarioManualPage() {
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               >
-                <option value="">Seleccione una asignación</option>
-                {asignaciones.map((a) => (
-                  <option key={a.id_asignacion_docente} value={a.id_asignacion_docente}>
-                    {a.docente?.perfil?.nombre_completo} - {a.materia_grupo?.materia?.nombre} ({a.materia_grupo?.grupo?.nombre})
-                  </option>
-                ))}
+          <option value="">Seleccione una asignación</option>
+          {asignaciones.map((a) => (
+            <option 
+              key={a.id_asignacion_docente} 
+              value={a.id_asignacion_docente}
+            >
+              {a.label}
+            </option>
+          ))}
+
+       
               </select>
             </div>
 
@@ -153,11 +157,14 @@ export default function AsignarHorarioManualPage() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               >
                 <option value="">Seleccione aula</option>
-                {aulas.map((aula) => (
-                  <option key={aula.id_aula} value={aula.id_aula}>
-                    {aula.nombre} ({aula.capacidad} personas)
-                  </option>
-                ))}
+                
+               {aulas.map((aula) => (
+                    <option key={aula.value} value={aula.value}>
+                      {aula.label}
+                    </option>
+               ))}
+      
+            
               </select>
             </div>
 
@@ -175,8 +182,8 @@ export default function AsignarHorarioManualPage() {
               >
                 <option value="">Seleccione día</option>
                 {dias.map((d) => (
-                  <option key={d.id_dia} value={d.id_dia}>
-                    {d.nombre}
+                  <option key={d.value} value={d.value}>
+                    {d.label}
                   </option>
                 ))}
               </select>
@@ -196,14 +203,14 @@ export default function AsignarHorarioManualPage() {
               >
                 <option value="">Seleccione bloque</option>
                 {bloques.map((b) => (
-                  <option key={b.id_bloque_horario} value={b.id_bloque_horario}>
-                    {b.nombre} ({b.hr_inicio} - {b.hr_fin})
+                  <option key={b.value} value={b.value}>
+                    {b.label}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Tipo de clase */}
+            {/* Tipo de Clase */}
             <div>
               <label className="block text-sm font-semibold text-[#003366] mb-1">
                 Tipo de Clase
@@ -217,8 +224,8 @@ export default function AsignarHorarioManualPage() {
               >
                 <option value="">Seleccione tipo</option>
                 {tiposClase.map((t) => (
-                  <option key={t.id_tipo_clase} value={t.id_tipo_clase}>
-                    {t.nombre}
+                  <option key={t.value} value={t.value}>
+                    {t.label}
                   </option>
                 ))}
               </select>
