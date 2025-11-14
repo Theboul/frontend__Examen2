@@ -12,6 +12,7 @@ interface OpcionSelect {
 export default function AsignarDocentePage() {
   const [docentes, setDocentes] = useState<OpcionSelect[]>([]);
   const [materiaGrupos, setMateriaGrupos] = useState<OpcionSelect[]>([]);
+
   const [form, setForm] = useState({
     cod_docente: "",
     id_materia_grupo: "",
@@ -75,10 +76,14 @@ export default function AsignarDocentePage() {
 
       const response = await asignacionDocenteService.crearAsignacion(data);
 
-      if (response.success) {
-        setMensaje({ tipo: "exito", texto: response.message });
+      console.log("RESPUESTA BACKEND →", response);
 
-        // limpiar form
+      if (response.success) {
+        setMensaje({
+          tipo: "exito",
+          texto: response.message || "Docente asignado correctamente",
+        });
+
         setForm({
           cod_docente: "",
           id_materia_grupo: "",
@@ -87,19 +92,26 @@ export default function AsignarDocentePage() {
 
         cargarSelects();
       } else {
-        throw new Error(response.message);
+        setMensaje({
+          tipo: "error",
+          texto: response.message || "Error desconocido",
+        });
       }
 
-    } catch (error: any) {
+    } catch (err) {
+      const error: any = err; // 👈 evita el error "unknown"
+
+      const backend = error.response?.data;
+
       setMensaje({
         tipo: "error",
         texto:
-          error.response?.data?.message ||
+          backend?.message ||
+          backend?.errors ||
           error.message ||
-          "No se pudo completar la asignación.",
+          "Error inesperado al asignar.",
       });
     } finally {
-      setLoading(false);
     }
   };
 
