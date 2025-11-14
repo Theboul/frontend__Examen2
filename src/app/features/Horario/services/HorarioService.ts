@@ -1,45 +1,45 @@
-import axios from "axios";
-
-const API_URL = `${import.meta.env.VITE_API_URL}/horarios-clase`;
+import axios from "../../../../lib/axios"; // axios con token incluido
 
 export const horarioService = {
   /**
    * Listar todos los horarios (opcional: filtrar por gestión)
    */
-  getAll: (params?: any) => axios.get(API_URL, { params }),
+  getAll: (params?: any) => axios.get("/horarios-clase", { params }),
 
   /**
    * Crear un horario manualmente (CU6)
    */
-  create: (data: any) => axios.post(API_URL, data),
+  create: (data: any) => axios.post("/horarios-clase", data),
 
   /**
    * Actualizar un horario existente
    */
-  update: (id: number, data: any) => axios.put(`${API_URL}/${id}`, data),
+  update: (id: number, data: any) =>
+    axios.put(`/horarios-clase/${id}`, data),
 
   /**
    * Eliminar (cancelar) un horario
    */
-  delete: (id: number) => axios.delete(`${API_URL}/${id}`),
+  delete: (id: number) =>
+    axios.delete(`/horarios-clase/${id}`),
 
   /**
    * Reactivar un horario previamente desactivado
    */
-  reactivar: (id: number) => axios.post(`${API_URL}/${id}/reactivar`),
+  reactivar: (id: number) =>
+    axios.post(`/horarios-clase/${id}/reactivar`),
 
   /**
    * Generar horarios automáticamente (CU7)
    */
   generarAutomatico: (data: any) =>
-    axios.post(`${API_URL}/generar-automatico`, data),
+    axios.post(`/horarios-clase/generar-automatico`, data),
 
   /**
    * Obtener catálogos de apoyo (días, bloques, tipos de clase)
+   * TODAS ESTAS RUTAS REQUERÍAN TOKEN → ahora SI lo enviamos
    */
-  getDias: () => axios.get(`${import.meta.env.VITE_API_URL}/dias/select`),
-  getBloques: () =>
-    axios.get(`${import.meta.env.VITE_API_URL}/bloques-horario/select`),
-  getTiposClase: () =>
-    axios.get(`${import.meta.env.VITE_API_URL}/tipos-clase/select`),
+  getDias: () => axios.get(`/dias/select`),
+  getBloques: () => axios.get(`/bloques-horario/select`),
+  getTiposClase: () => axios.get(`/tipos-clase/select`),
 };

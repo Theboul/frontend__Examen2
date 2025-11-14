@@ -3,6 +3,18 @@ import { api } from "../../../../lib/axios";
 const API_URL = "/asignaciones-docente";
 
 export const asignacionDocenteService = {
+
+  // 🔹 NUEVO método para traer solo lo necesario para el select
+  getSelect: async () => {
+    try {
+      const res = await api.get(`${API_URL}/select`);
+      return res.data.data; // solo la lista
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 🔹 ESTO NO LO TOCAMOS
   getAll: async () => {
     try {
       const res = await api.get(API_URL);
@@ -12,6 +24,7 @@ export const asignacionDocenteService = {
     }
   },
 
+  // 🔹 TAMPOCO TOCADO
   crearAsignacion: async (data: any) => {
     try {
       const res = await api.post(API_URL, data);
